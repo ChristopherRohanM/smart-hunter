@@ -52,9 +52,24 @@ st.subheader(f"Total Jobs Found: {len(jobs)}")
 # AI MATCH SECTION
 st.markdown("## 🤖 AI Resume Match")
 
-resume_text = st.text_area(
-    "Paste Resume Text"
+uploaded_resume = st.file_uploader(
+    "📄 Upload Resume",
+    type=["txt"]
 )
+
+resume_text = ""
+
+if uploaded_resume is not None:
+
+    resume_text = uploaded_resume.read().decode("utf-8")
+
+    st.success("Resume Uploaded Successfully 😄")
+
+else:
+
+    resume_text = st.text_area(
+        "Paste Resume Text"
+    )
 
 resume_words = re.findall(
     r"\w+",
