@@ -1,0 +1,42 @@
+[
+    {
+        "title": "Senior Technical Recruiter",
+        "company": "Amazon",
+        "location": "Remote",
+        "url": "https://amazon.jobs",
+        "status": "Applied",
+        "notes": "done"
+    },
+    {
+        "title": "Technical Recruiter",
+        "company": "Meta",
+        "location": "Bangalore",
+        "url": "https://meta.com/careers",
+        "status": "New",
+        "notes": ""
+    },
+    {
+        "title": "US Staffing Recruiter",
+        "company": "Google",
+        "location": "Hyderabad",
+        "url": "https://careers.google.com",
+        "status": "Interview",
+        "notes": ""
+    },
+    {
+        "title": "Recruiter",
+        "company": "XYZ",
+        "location": "Banglore",
+        "url": "Xyz",
+        "status": "Applied",
+        "notes": ""
+    },
+    {
+        "title": "Taq",
+        "company": "ABC",
+        "location": "Bangalore",
+        "url": "ABC",
+        "status": "Applied",
+        "notes": ""
+    }
+]
