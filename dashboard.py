@@ -1,8 +1,14 @@
+from openai import OpenAI
 import streamlit as st
 import sqlite3
 import pandas as pd
 import re
 from PyPDF2 import PdfReader
+
+client = OpenAI(
+    api_key=st.secrets["GROQ_API_KEY"],
+    base_url="https://api.groq.com/openai/v1"
+)
 
 st.set_page_config(
     page_title="Smart Hunter",
@@ -89,6 +95,28 @@ if uploaded_resume is not None:
         resume_text = uploaded_resume.read().decode("utf-8")
 
     st.success("Resume Uploaded Successfully 😄")
+
+    with st.spinner("🤖 AI is analyzing resume..."):
+
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert recruiter."
+                },
+                {
+                    "role": "user",
+                    "content": f"Summarize this resume:\n\n{resume_text}"
+                }
+            ]
+        )
+
+        ai_summary = response.choices[0].message.content
+
+    st.markdown("## 🤖 AI Resume Summary")
+
+    st.write(ai_summary)
 
 else:
 
@@ -204,6 +232,39 @@ for job in jobs:
                 st.write(f"📍 Location: {job['location']}")
                 st.write(f"📌 Status: {job['status']}")
                 st.write(f"🤖 Match Score: {match_score}%")
+
+                if resume_text != "":
+
+                    with st.spinner("🤖 AI evaluating candidate fit..."):
+
+                        fit_response = client.chat.completions.create(
+                            model="llama-3.1-8b-instant",
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": "You are an expert technical recruiter."
+                                },
+                                {
+                                    "role": "user",
+                                    "content": f"""
+                                    Resume:
+                                    {resume_text}
+
+                                    Job:
+                                    Title: {job["title"]}
+                                    Company: {job["company"]}
+                                    Notes: {job["notes"]}
+
+                                    Explain why this candidate is or is not a good fit.
+                                    Keep it short and recruiter-friendly.
+                                    """
+                                }
+                            ]
+                        )
+
+                        fit_analysis = fit_response.choices[0].message.content
+
+                    st.info(fit_analysis)
 
                 st.markdown(
                     f"[🔗 Open Job Link]({job['url']})"
