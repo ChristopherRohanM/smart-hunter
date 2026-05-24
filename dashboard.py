@@ -1,5 +1,5 @@
 import streamlit as st
-import json
+import sqlite3
 import pandas as pd
 import re
 from PyPDF2 import PdfReader
@@ -9,11 +9,21 @@ st.set_page_config(
     layout="wide"
 )
 
-# LOAD JOBS
-with open("jobs.json", "r") as file:
-    jobs = json.load(file)
+# LOAD JOBS FROM DATABASE
+connection = sqlite3.connect("jobs.db")
+connection.row_factory = sqlite3.Row
 
+cursor = connection.cursor()
+
+cursor.execute("SELECT * FROM jobs")
+
+jobs = cursor.fetchall()
+
+connection.close()
+
+# TITLE
 st.title("🎯 Smart Hunter Dashboard")
+
 # SIDEBAR
 st.sidebar.title("📊 Smart Hunter Analytics")
 
@@ -50,6 +60,7 @@ status_filter = st.selectbox(
 
 # TOTAL JOBS
 st.subheader(f"Total Jobs Found: {len(jobs)}")
+
 # AI MATCH SECTION
 st.markdown("## 🤖 AI Resume Match")
 
@@ -65,8 +76,6 @@ if uploaded_resume is not None:
     if uploaded_resume.type == "application/pdf":
 
         pdf_reader = PdfReader(uploaded_resume)
-
-        resume_text = ""
 
         for page in pdf_reader.pages:
 
@@ -111,23 +120,36 @@ with st.expander("➕ Add New Job"):
 
         if submitted:
 
-            new_job = {
-                "title": title,
-                "company": company,
-                "location": location,
-                "url": url,
-                "status": status
-            }
+            connection = sqlite3.connect("jobs.db")
 
-            jobs.append(new_job)
+            cursor = connection.cursor()
 
-            with open("jobs.json", "w") as file:
-                json.dump(jobs, file, indent=4)
+            cursor.execute("""
+            INSERT INTO jobs (
+                title,
+                company,
+                location,
+                url,
+                status,
+                notes
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                title,
+                company,
+                location,
+                url,
+                status,
+                ""
+            ))
+
+            connection.commit()
+
+            connection.close()
 
             st.success("Job Added Successfully 😄")
 
             st.rerun()
-
 
 # JOB CARDS
 for job in jobs:
@@ -144,10 +166,11 @@ for job in jobs:
     )
 
     if matches_search and matches_status:
+
         job_text = (
             job["title"] + " " +
             job["company"] + " " +
-            job.get("notes", "")
+            job["notes"]
         ).lower()
 
         job_words = re.findall(
@@ -158,10 +181,13 @@ for job in jobs:
         matching_words = set(resume_words).intersection(job_words)
 
         if len(job_words) > 0:
+
             match_score = int(
                 (len(matching_words) / len(job_words)) * 100
             )
+
         else:
+
             match_score = 0
 
         with st.container():
@@ -182,33 +208,57 @@ for job in jobs:
                 st.markdown(
                     f"[🔗 Open Job Link]({job['url']})"
                 )
+
                 notes = st.text_area(
                     "📝 Notes",
-                    value=job.get("notes", ""),
-                    key=job["title"] + "_notes"
+                    value=job["notes"],
+                    key=str(job["id"]) + "_notes"
                 )
 
-                if notes != job.get("notes", ""):
+                if notes != job["notes"]:
 
-                    job["notes"] = notes
+                    connection = sqlite3.connect("jobs.db")
 
-                    with open("jobs.json", "w") as file:
-                        json.dump(jobs, file, indent=4)
+                    cursor = connection.cursor()
+
+                    cursor.execute("""
+                    UPDATE jobs
+                    SET notes = ?
+                    WHERE id = ?
+                    """, (
+                        notes,
+                        job["id"]
+                    ))
+
+                    connection.commit()
+
+                    connection.close()
 
                     st.rerun()
 
             with col2:
+
                 delete_button = st.button(
                     "🗑️ Delete",
-                    key=job["title"]
+                    key=str(job["id"])
                 )
 
                 if delete_button:
 
-                    jobs.remove(job)
+                    connection = sqlite3.connect("jobs.db")
 
-                    with open("jobs.json", "w") as file:
-                        json.dump(jobs, file, indent=4)
+                    cursor = connection.cursor()
+
+                    cursor.execute("""
+                    DELETE FROM jobs
+                    WHERE id = ?
+                    """, (
+                        job["id"],
+                    ))
+
+                    connection.commit()
+
+                    connection.close()
 
                     st.rerun()
 
@@ -216,14 +266,26 @@ for job in jobs:
                     "Update Status",
                     ["New", "Applied", "Interview"],
                     index=["New", "Applied", "Interview"].index(job["status"]),
-                    key=job["title"] + "_status"
+                    key=str(job["id"]) + "_status"
                 )
 
                 if updated_status != job["status"]:
 
-                    job["status"] = updated_status
+                    connection = sqlite3.connect("jobs.db")
 
-                    with open("jobs.json", "w") as file:
-                        json.dump(jobs, file, indent=4)
+                    cursor = connection.cursor()
 
-                    st.rerun()	
+                    cursor.execute("""
+                    UPDATE jobs
+                    SET status = ?
+                    WHERE id = ?
+                    """, (
+                        updated_status,
+                        job["id"]
+                    ))
+
+                    connection.commit()
+
+                    connection.close()
+
+                    st.rerun()
