@@ -266,6 +266,43 @@ for job in jobs:
 
                     st.info(fit_analysis)
 
+                if st.button(
+                    "✉️ Generate Outreach",
+                    key=str(job["id"]) + "_outreach"
+                ):
+
+                    with st.spinner("🤖 AI writing recruiter outreach..."):
+
+                        outreach_response = client.chat.completions.create(
+                            model="llama-3.1-8b-instant",
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": "You are an expert recruiter writing LinkedIn outreach."
+                                },
+                                {
+                                    "role": "user",
+                                    "content": f"""
+                                    Resume:
+                                    {resume_text}
+
+                                    Job:
+                                    Title: {job["title"]}
+                                    Company: {job["company"]}
+
+                                    Write a professional recruiter outreach message.
+                                    Keep it concise and friendly.
+                                    """
+                                }
+                            ]
+                        )
+
+                        outreach_message = outreach_response.choices[0].message.content
+
+                    st.markdown("### ✉️ AI Outreach Message")
+
+                    st.write(outreach_message)
+
                 st.markdown(
                     f"[🔗 Open Job Link]({job['url']})"
                 )
