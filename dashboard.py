@@ -2,6 +2,7 @@ import streamlit as st
 import json
 import pandas as pd
 import re
+from PyPDF2 import PdfReader
 
 st.set_page_config(
     page_title="Smart Hunter",
@@ -54,14 +55,29 @@ st.markdown("## 🤖 AI Resume Match")
 
 uploaded_resume = st.file_uploader(
     "📄 Upload Resume",
-    type=["txt"]
+    type=["txt", "pdf"]
 )
 
 resume_text = ""
 
 if uploaded_resume is not None:
 
-    resume_text = uploaded_resume.read().decode("utf-8")
+    if uploaded_resume.type == "application/pdf":
+
+        pdf_reader = PdfReader(uploaded_resume)
+
+        resume_text = ""
+
+        for page in pdf_reader.pages:
+
+            text = page.extract_text()
+
+            if text:
+                resume_text += text
+
+    else:
+
+        resume_text = uploaded_resume.read().decode("utf-8")
 
     st.success("Resume Uploaded Successfully 😄")
 
